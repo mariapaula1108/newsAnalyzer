@@ -1,14 +1,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Upload Files</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <title>News Analyzer</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+
 </head>
 {% extends "base.html" %}
 
 {% block content %}
   <div class="container mt-4">
-    <h1>Upload Files</h1>
+    <h1>News Analyzer</h1>
     <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
       <div class="mb-3">
         <input class="form-control" type="file" id="formFileMultiple" name="files" multiple>
@@ -43,8 +44,9 @@
               <td>{{ upload_time }}</td>
               <td>
                 <a href="{{ url_for('serve_file', filename=filename) }}" class="btn btn-primary me-2">
-                  View     
+                  View
                 </a>
+                <br> <!-- Add a line break here -->
                 <a href="{{ url_for('analysis', filename=filename) }}" class="btn btn-secondary">
                   Analysis
                 </a>

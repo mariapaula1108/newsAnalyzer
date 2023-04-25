@@ -15,15 +15,7 @@ body {
 }
 
 /* Buttons */
-.btn-primary {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-}
 
-.btn-secondary {
-  background-color: var(--secondary-color);
-  border-color: var(--secondary-color);
-}
 
 .btn-success {
   background-color: var(--success-color);
@@ -61,7 +53,7 @@ tr:nth-child(even) {
   background-color: var(--light-color);
 }
 
-tr:hover {
-  background-color: var(--dark-color);
-  color: var(--light-color);
+
+.btn-primary:focus, .btn-primary:active, .btn-secondary:focus, .btn-secondary:active {
+    box-shadow: none;
 }
