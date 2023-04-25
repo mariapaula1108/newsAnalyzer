@@ -8,14 +8,15 @@ from google.auth.transport import requests
 from google.cloud import storage
 import chardet
 import PyPDF2
-from keyword_extractor import extract_keywords
-from sentiment_extractor import analyze_pdf_sentiment
-from search_web import search_web
-from save_db import save_db
-from db_create import db_create
-from save_file_info import save_file_info
-from get_user_files import get_user_files
-from get_file_analysis import get_file_analysis
+from utils.keyword_extractor import extract_keywords
+from utils.sentiment_extractor import analyze_pdf_sentiment
+from utils.search_web import search_web
+from utils.save_db import save_db
+from utils.db_create import db_create
+from utils.save_file_info import save_file_info
+from utils.get_user_files import get_user_files
+from utils.get_file_analysis import get_file_analysis
+from utils.search_files import search_files
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -172,9 +173,6 @@ def upload():
                 )
 
                 flash(f'File uploaded successfully: {filename}')
-                flash(f'Keywords found successfully: {keyword_list}')
-                flash(f'Sentiment analysis complete: {paragraph_sentiment}')
-                flash(f'Here are some similar articles to the file uploaded: {urls}')
     user_files = get_user_files(session['email']) 
     print(user_files)            
     return render_template('upload.html', files=user_files)
@@ -202,6 +200,16 @@ def analysis(filename):
     analysis_data = get_file_analysis(session['email'], filename)
 
     return render_template('analysis.html', filename=filename, analysis_data=analysis_data)
+
+@app.route('/search', methods=['POST'])
+def search():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    search_query = request.form['search_query']
+    search_results = search_files(session['email'], search_query)
+    return render_template('search_results.html', search_query=search_query, search_results=search_results)
+
 
 # Logout route
 @app.route('/logout')

@@ -1,36 +1,62 @@
-<!doctype html>
-<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>File Upload</title>
+  <title>Upload Files</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-  <h1>Upload your files</h1>
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}
-      <ul>
-         {% for message in messages %}
-             <li>{{ message}}</li>
-         {% endfor %}
-      </ul>
-    {% endif %}
-  {% endwith %}
-  <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data">
-    <input type="file" name="files" multiple>
-    <input type="submit" value="Upload">
-  </form>
-  {% if files %}
-    <h3>Your files:</h3>
-    <ul>
-    {% for file, upload_time in files %}
-        <li>
-            <a href="{{ url_for('serve_file', filename=file) }}">Open file: {{ file }}</a> (uploaded at: {{ upload_time }})<br>
-            <a href="{{ url_for('analysis', filename=file) }}">See analysis</a>
-        </li>
-    {% endfor %}
-    </ul>
-  {% endif %}
+{% extends "base.html" %}
 
-</body>
-</html>
+{% block content %}
+  <div class="container mt-4">
+    <h1>Upload Files</h1>
+    <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+      <div class="mb-3">
+        <input class="form-control" type="file" id="formFileMultiple" name="files" multiple>
+      </div>
+      <div class="mb-3">
+        <button type="submit" class="btn btn-primary">Upload</button>
+      </div>
+    </form>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th scope="col">Filename</th>
+          <th scope="col">Upload Time</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if files %}
+          {% for filename, upload_time in files %}
+            <tr>
+              <td>{{ filename }}</td>
+              <td>{{ upload_time }}</td>
+              <td>
+                <a href="{{ url_for('serve_file', filename=filename) }}" class="btn btn-primary me-2">
+                  View     
+                </a>
+                <a href="{{ url_for('analysis', filename=filename) }}" class="btn btn-secondary">
+                  Analysis
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="3">No files uploaded yet.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

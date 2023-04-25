@@ -1,11 +1,6 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>File Analysis</title>
-</head>
-<body>
+{% extends 'base.html' %}
+
+{% block content %}
   <h1>Analysis for {{ filename }}</h1>
   <h3>Keywords:</h3>
   <ul>
@@ -22,7 +17,4 @@
     {% endfor %}
   </ul>
   <a href="{{ url_for('upload') }}">Back to file list</a>
-</body>
-</html>
-
-
+{% endblock %}

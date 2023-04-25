@@ -1,9 +1,9 @@
 import PyPDF2
-from keyword_extractor import extract_keywords
-from sentiment_extractor import analyze_pdf_sentiment
-from search_web import search_web
-from save_db import save_db
-from db_create import db_create
+from utils.keyword_extractor import extract_keywords
+from utils.sentiment_extractor import analyze_pdf_sentiment
+from utils.search_web import search_web
+from utils.save_db import save_db
+from utils.db_create import db_create
 import queue
 import PyPDF2
 

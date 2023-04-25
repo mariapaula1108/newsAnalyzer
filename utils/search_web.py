@@ -1,5 +1,5 @@
 import requests
-from keyword_extractor import extract_keywords
+from utils.keyword_extractor import extract_keywords
 
 def search_web(extract_keywords):
     url = "https://www.googleapis.com/customsearch/v1"
