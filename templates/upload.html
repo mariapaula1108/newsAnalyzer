@@ -6,7 +6,7 @@
   <title>File Upload</title>
 </head>
 <body>
-  <h1>Upload your file</h1>
+  <h1>Upload your files</h1>
   {% with messages = get_flashed_messages() %}
     {% if messages %}
       <ul>
@@ -16,9 +16,21 @@
       </ul>
     {% endif %}
   {% endwith %}
-  <form action="/upload" method="POST" enctype="multipart/form-data">
-    <input type="file" name="file" accept=".txt,.pdf,.doc,.docx">
+  <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data">
+    <input type="file" name="files" multiple>
     <input type="submit" value="Upload">
   </form>
+  {% if files %}
+    <h3>Your files:</h3>
+    <ul>
+    {% for file, upload_time in files %}
+        <li>
+            <a href="{{ url_for('serve_file', filename=file) }}">Open file: {{ file }}</a> (uploaded at: {{ upload_time }})<br>
+            <a href="{{ url_for('analysis', filename=file) }}">See analysis</a>
+        </li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+
 </body>
 </html>

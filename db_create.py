@@ -6,7 +6,6 @@ def db_create(email):
     db_filename = f"{email}.db"
     conn = sqlite3.connect(db_filename)
     c = conn.cursor()
-
     # Check if the files table already exists
     c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='files'")
     file_table_exists = c.fetchone() is not None
@@ -33,6 +32,27 @@ def db_create(email):
                     (email text)''')
 
     c.execute("INSERT INTO users VALUES (?)", (email,))
+    
+    c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='user_files'")
+    user_files_table_exists = c.fetchone() is not None
+
+    # If the table does not exist, create it
+    if not user_files_table_exists:
+        c.execute('''CREATE TABLE user_files
+                    (id INTEGER PRIMARY KEY,
+                     user_email text,
+                     file_name text,
+                     upload_time TIMESTAMP)''')
+        
+    # Check if the file_analysis table already exists
+    c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='file_analysis'")
+    file_analysis_table_exists = c.fetchone() is not None
+
+    # If the table does not exist, create it
+    if not file_analysis_table_exists:
+        c.execute('''CREATE TABLE file_analysis
+                    (file_name text, keywords text, sentiment text, urls text)''')
+    
     conn.commit()
 
     conn.close()

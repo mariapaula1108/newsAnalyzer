@@ -1,6 +1,6 @@
 import os
 import io
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, Response
 from werkzeug.utils import secure_filename
 from google.oauth2 import id_token
 from google_auth_oauthlib.flow import Flow
@@ -13,6 +13,9 @@ from sentiment_extractor import analyze_pdf_sentiment
 from search_web import search_web
 from save_db import save_db
 from db_create import db_create
+from save_file_info import save_file_info
+from get_user_files import get_user_files
+from get_file_analysis import get_file_analysis
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -102,72 +105,103 @@ def oauth2callback():
     
     return redirect(url_for('upload', email=email))
 
-
-
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        # Check if a file was uploaded
-        if 'file' not in request.files:
+        # Check if files were uploaded
+        if 'files' not in request.files:
             flash('No file part')
             return redirect(request.url)
 
-        file = request.files['file']
+        files = request.files.getlist('files')
 
-        # If the user does not select a file, the browser submits an empty file
-        if file.filename == '':
-            flash('No selected file')
+        # If the user does not select any file, the browser submits an empty list
+        if not files or all(file.filename == '' for file in files):
+            flash('No selected files')
             return redirect(request.url)
 
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
+        user_files = get_user_files(session['email'])
 
-            # Check if the file is a PDF file
-            if file.content_type == 'application/pdf':
-                # Extract text from PDF file
-                pdf_reader = PyPDF2.PdfReader(file)
-                file_content = ''
-                for page_num in range(len(pdf_reader.pages)):
-                    page_obj = pdf_reader.pages[page_num]
-                    file_content += page_obj.extract_text()
+        for file in files:
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                # Check if the filename already exists in the user's files
+                if filename in [file_name for file_name, _ in user_files]:
+                    flash(f'File with the same name already exists: {filename}')
+                    continue
+                
+                # Check if the file is a PDF file
+                if file.content_type == 'application/pdf':
+                    # Extract text from PDF file
+                    pdf_reader = PyPDF2.PdfReader(file)
+                    file_content = ''
+                    for page_num in range(len(pdf_reader.pages)):
+                        page_obj = pdf_reader.pages[page_num]
+                        file_content += page_obj.extract_text()
 
-            else:
-                # Detect the encoding of the file
-                file_content = io.BytesIO(file.read())
-                file_encoding = chardet.detect(file_content.read())['encoding']
-                if file_encoding is None or file_encoding == '':
-                    file_encoding = 'utf-8'
-                file_content.seek(0)
-                file_content = file_content.read().decode(file_encoding, errors='ignore')
+                else:
+                    # Detect the encoding of the file
+                    file_content = io.BytesIO(file.read())
+                    file_encoding = chardet.detect(file_content.read())['encoding']
+                    if file_encoding is None or file_encoding == '':
+                        file_encoding = 'utf-8'
+                    file_content.seek(0)
+                    file_content = file_content.read().decode(file_encoding, errors='ignore')
 
-            # Extract keywords from file content
-            keyword_list = extract_keywords(file_content)
+                # Extract keywords from file content
+                keyword_list = extract_keywords(file_content)
 
-            # Analyze sentiment and extract keywords from file content
-            paragraph_sentiment = analyze_pdf_sentiment(file_content)
-            
-            # Search the web for similar articles 
-            urls = search_web(keyword_list)
-            
-            # Upload the file to Google Cloud Storage
-            bucket = storage_client.get_bucket(BUCKET_NAME)
-            blob = bucket.blob(filename)
-            blob.upload_from_string(
-                file.read(),
-                content_type=file.content_type
-            )
+                # Analyze sentiment and extract keywords from file content
+                paragraph_sentiment = analyze_pdf_sentiment(file_content)
+                
+                # Search the web for similar articles 
+                urls = search_web(keyword_list)
+                
+                save_file_info(session['email'], filename, keyword_list, paragraph_sentiment, urls)
+                
+                # Upload the file to Google Cloud Storage
+                bucket = storage_client.get_bucket(BUCKET_NAME)
+                blob = bucket.blob(filename)
+                file.seek(0)  # Add this line to reset the file read pointer
+                blob.upload_from_string(
+                    file.read(),
+                    content_type=file.content_type
+                )
 
-            flash(f'File uploaded successfully: {filename}')
-            flash(f'Keywords found successfully: {keyword_list}')
-            flash(f'Sentiment analysis complete: {paragraph_sentiment}')
-            flash(f'Here are some similar articles to the file uploaded: {urls}')
+                flash(f'File uploaded successfully: {filename}')
+                flash(f'Keywords found successfully: {keyword_list}')
+                flash(f'Sentiment analysis complete: {paragraph_sentiment}')
+                flash(f'Here are some similar articles to the file uploaded: {urls}')
+    user_files = get_user_files(session['email']) 
+    print(user_files)            
+    return render_template('upload.html', files=user_files)
 
-            return redirect(url_for('upload', email=session['email']))
+@app.route('/files/<filename>')
+def serve_file(filename):
+    # Read the file content from Google Cloud Storage
+    bucket = storage_client.get_bucket(BUCKET_NAME)
+    blob = bucket.blob(filename)
+    file_content = blob.download_as_bytes()
 
-    return render_template('upload.html')
+    # Return the file content as a response with the appropriate content type
+    response = Response(file_content, content_type=blob.content_type)
+    response.headers.set('Content-Disposition', 'attachment', filename=filename)
+    return response
+
+
+@app.route('/analysis/<filename>')
+def analysis(filename):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    # Retrieve the file analysis (keywords, sentiment, related articles) from the database
+    # You need to implement the 'get_file_analysis' function that retrieves the analysis from the database
+    analysis_data = get_file_analysis(session['email'], filename)
+
+    return render_template('analysis.html', filename=filename, analysis_data=analysis_data)
 
 # Logout route
 @app.route('/logout')

@@ -52,4 +52,7 @@ def analyze_pdf_sentiment(pdf_content):
 
             paragraph_keys[paragraph_key] = main_k
 
+    print("The main keywords in each paragraph:", paragraph_keys)
+    print("The sentiment of each paragraph:" ,paragraph_sent)
+
     return paragraph_sent

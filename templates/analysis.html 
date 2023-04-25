@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>File Analysis</title>
+</head>
+<body>
+  <h1>Analysis for {{ filename }}</h1>
+  <h3>Keywords:</h3>
+  <ul>
+    {% for keyword in analysis_data.keywords %}
+      <li>{{ keyword }}</li>
+    {% endfor %}
+  </ul>
+  <h3>Sentiment:</h3>
+  <p>{{ analysis_data.sentiment }}</p>
+  <h3>Related articles:</h3>
+  <ul>
+    {% for url in analysis_data.urls %}
+      <li><a href="{{ url }}" target="_blank">{{ url }}</a></li>
+    {% endfor %}
+  </ul>
+  <a href="{{ url_for('upload') }}">Back to file list</a>
+</body>
+</html>
+
+
