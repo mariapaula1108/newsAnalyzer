@@ -60,13 +60,16 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Login route
+# Login route
 @app.route('/login')
 def login():
+    # Initialize the OAuth2 flow
     flow = Flow.from_client_config(
         OAUTH2_CLIENT_CONFIG,
         scopes=['openid', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile'],
         redirect_uri=url_for('oauth2callback', _external=True)
     )
+    # Get the authorization URL
     auth_url, state = flow.authorization_url(prompt='consent')
     session['state'] = state
     session['user_name'] = None  # Initialize user name to None
@@ -82,8 +85,10 @@ def oauth2callback():
         state=session['state']
     )
 
+    # Fetch token
     flow.fetch_token(authorization_response=request.url)
 
+    # Store credentials in the session
     credentials = flow.credentials
     session['credentials'] = {
         'token': credentials.token,
@@ -93,18 +98,22 @@ def oauth2callback():
         'client_secret': credentials.client_secret,
         'scopes': credentials.scopes
     }
-
+    
+    # Verify ID token
     idinfo = id_token.verify_oauth2_token(credentials.id_token, requests.Request(), CLIENT_ID)
-
+    
+    # Validate the issuer
     if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
         raise ValueError('Wrong issuer.')
 
+    # Store user information in the session
     session['user_id'] = idinfo['sub']
     session['email'] = idinfo['email']
     session['name'] = idinfo.get('name', 'Unknown')
     
     email=session['email']
     
+    # Create a new user database if it does not exist
     create_request = db_create(email)
     print(create_request)
     
@@ -113,13 +122,16 @@ def oauth2callback():
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     
+    # Check if the user is logged in
     if 'user_id' not in session:
         return redirect(url_for('login'))
-
+    
+    # Get user files
     email = session['email']
     user_files = get_user_files(email)
     name = session.get('name', 'Unknown')
 
+    # Handle file uploads
     if request.method == 'POST':
         # Check if files were uploaded
         if 'files' not in request.files:
@@ -254,3 +266,6 @@ def logout():
 
 if __name__ == '__main__':
     app.run(host="127.0.0.1", port=5000, debug=True)
+
+
+

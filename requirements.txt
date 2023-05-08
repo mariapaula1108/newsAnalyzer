@@ -1,4 +1,4 @@
-# To ensure app dependencies are ported from your virtual environment/host machine into your container, run 'pip freeze > requirements.txt' in the terminal to overwrite this file
+#Requirements.txt
 flask 
 werkzeug
 chardet
@@ -8,5 +8,9 @@ google-auth-oauthlib
 google.cloud
 genism
 sklearn
+nltk
+re
+
 #pip install --upgrade google-cloud-storage
 #python3 -m pip install scikit-learn
+#python -m spacy download en_core_web_sm
