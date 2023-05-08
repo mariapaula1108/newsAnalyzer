@@ -44,6 +44,6 @@ The NewsAnalyzer application consists of the following modules:
 1. Ensure you have Python 3.6 or later installed on your system.
 2. Install the required dependencies by running: `pip install -r requirements.txt`
 3. Set the necessary environment variables (if required), such as API keys.
-4. Run the Flask application with: `export FLASK_APP=app                   
+4. Run the Flask application with: `export FLASK_APP=app 
 flask run`
 
