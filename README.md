@@ -63,6 +63,6 @@ The NewsAnalyzer application consists of the following modules:
 `python3 -m pip install scikit-learn`
 `python -m spacy download en_core_web_sm`
 4. Set the necessary environment variables (if required), such as API keys.
-5. Run the Flask application with: `export FLASK_APP=app' 
-'flask run`
+5. Run the Flask application with: `export FLASK_APP=app` 
+`flask run`
 
