@@ -53,7 +53,8 @@ The NewsAnalyzer application consists of the following modules:
 2. Google Cloud Storage: Uploaded files are stored in Google Cloud Storage, providing a scalable and secure solution for file storage.
 3. PyPDF2: This library is used to extract text from PDF files, which is then used for analysis.
 4. chardet: This library is used to detect the encoding of the uploaded files, ensuring correct handling of text data.
-## Allowed Extensions: The application restricts the types of files that can be uploaded. The allowed file types are txt, pdf, png, jpg, jpeg, and gif.
+## Allowed Extensions: 
+The application restricts the types of files that can be uploaded. The allowed file types are txt, pdf, png, jpg, jpeg, and gif.
 
 ### How to Run the Project
 
