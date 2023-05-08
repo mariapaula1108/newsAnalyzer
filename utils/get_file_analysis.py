@@ -7,18 +7,23 @@ def get_file_analysis(email, file_name):
     c = conn.cursor()
 
     # Retrieve the file analysis data from the file_analysis table
-    c.execute("SELECT keywords, sentiment, urls FROM file_analysis WHERE file_name = ?", (file_name,))
+    c.execute("SELECT file_content, keywords, sentiment, urls, topics FROM file_analysis WHERE file_name = ?", (file_name,))
     analysis_row = c.fetchone()
 
     if analysis_row is not None:
-        keywords, sentiment, urls = analysis_row
+        file_content, keywords, sentiment, urls, topics = analysis_row
+        file_content = file_content
         keywords = keywords.split(',')
         urls = urls.split(',')
+        topics = topics.split(',')
 
         analysis_data = {
+            'file_content' : file_content,
             'keywords': keywords,
             'sentiment': sentiment,
-            'urls': urls
+            'urls': urls,
+            'topics': topics
+            
         }
     else:
         analysis_data = None

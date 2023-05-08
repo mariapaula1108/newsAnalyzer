@@ -17,6 +17,9 @@ from utils.save_file_info import save_file_info
 from utils.get_user_files import get_user_files
 from utils.get_file_analysis import get_file_analysis
 from utils.search_files import search_files
+from utils.topic_extractor import extract_topics
+from utils.extract_entities import extract_entities
+
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -66,6 +69,7 @@ def login():
     )
     auth_url, state = flow.authorization_url(prompt='consent')
     session['state'] = state
+    session['user_name'] = None  # Initialize user name to None
     return redirect(auth_url)
 
 # OAuth2 callback route
@@ -108,8 +112,13 @@ def oauth2callback():
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
+    
     if 'user_id' not in session:
         return redirect(url_for('login'))
+
+    email = session['email']
+    user_files = get_user_files(email)
+    name = session.get('name', 'Unknown')
 
     if request.method == 'POST':
         # Check if files were uploaded
@@ -124,7 +133,7 @@ def upload():
             flash('No selected files')
             return redirect(request.url)
 
-        user_files = get_user_files(session['email'])
+        user_files = get_user_files(email)
 
         for file in files:
             if file and allowed_file(file.filename):
@@ -134,48 +143,64 @@ def upload():
                     flash(f'File with the same name already exists: {filename}')
                     continue
                 
-                # Check if the file is a PDF file
-                if file.content_type == 'application/pdf':
-                    # Extract text from PDF file
-                    pdf_reader = PyPDF2.PdfReader(file)
-                    file_content = ''
-                    for page_num in range(len(pdf_reader.pages)):
-                        page_obj = pdf_reader.pages[page_num]
-                        file_content += page_obj.extract_text()
-
+                # Save the file without analyzing it if it's a PNG or JPG
+                if file.content_type.startswith('image/'):
+                    # Upload the file to Google Cloud Storage
+                    bucket = storage_client.get_bucket(BUCKET_NAME)
+                    blob = bucket.blob(filename)
+                    file.seek(0)  # Add this line to reset the file read pointer
+                    blob.upload_from_string(
+                        file.read(),
+                        content_type=file.content_type
+                    )
+                    save_file_info(email, filename, keyword_list=None, sentiment=None, urls=None, topics=None)
+                
+                # Otherwise, analyze the file
                 else:
-                    # Detect the encoding of the file
-                    file_content = io.BytesIO(file.read())
-                    file_encoding = chardet.detect(file_content.read())['encoding']
-                    if file_encoding is None or file_encoding == '':
-                        file_encoding = 'utf-8'
-                    file_content.seek(0)
-                    file_content = file_content.read().decode(file_encoding, errors='ignore')
+                    # Check if the file is a PDF file
+                    if file.content_type == 'application/pdf':
+                        # Extract text from PDF file
+                        pdf_reader = PyPDF2.PdfReader(file)
+                        file_content = ''
+                        for page_num in range(len(pdf_reader.pages)):
+                            page_obj = pdf_reader.pages[page_num]
+                            file_content += page_obj.extract_text()
 
-                # Extract keywords from file content
-                keyword_list = extract_keywords(file_content)
+                    else:
+                        # Detect the encoding of the file
+                        file_content = io.BytesIO(file.read())
+                        file_encoding = chardet.detect(file_content.read())['encoding']
+                        if file_encoding is None or file_encoding == '':
+                            file_encoding = 'utf-8'
+                        file_content.seek(0)
+                        file_content = file_content.read().decode(file_encoding, errors='ignore')
 
-                # Analyze sentiment and extract keywords from file content
-                paragraph_sentiment = analyze_pdf_sentiment(file_content)
-                
-                # Search the web for similar articles 
-                urls = search_web(keyword_list)
-                
-                save_file_info(session['email'], filename, keyword_list, paragraph_sentiment, urls)
-                
-                # Upload the file to Google Cloud Storage
-                bucket = storage_client.get_bucket(BUCKET_NAME)
-                blob = bucket.blob(filename)
-                file.seek(0)  # Add this line to reset the file read pointer
-                blob.upload_from_string(
-                    file.read(),
-                    content_type=file.content_type
-                )
+                    # Extract keywords from file content
+                    keyword_list = extract_keywords(file_content)
 
-                flash(f'File uploaded successfully: {filename}')
-    user_files = get_user_files(session['email']) 
-    print(user_files)            
-    return render_template('upload.html', files=user_files)
+                    # Analyze sentiment and extract keywords from file content
+                    paragraph_sentiment = analyze_pdf_sentiment(file_content)
+                    
+                    # Search the web for similar articles 
+                    urls = search_web(keyword_list)
+                    
+                    topics = extract_topics(file_content)
+                    
+                    save_file_info(email, filename, file_content, keyword_list, paragraph_sentiment, urls, topics)
+                    
+                    # Upload the file to Google Cloud Storage
+                    bucket = storage_client.get_bucket(BUCKET_NAME)
+                    blob = bucket.blob(filename)
+                    file.seek(0)  # Add this line to reset the file read pointer
+                    blob.upload_from_string(
+                        file.read(),
+                        content_type=file.content_type
+                    )
+
+                
+    user_files = get_user_files(email) 
+    return render_template('upload.html', files=user_files, email=session['email'], name=name)
+
 
 @app.route('/files/<filename>')
 def serve_file(filename):
@@ -196,19 +221,29 @@ def analysis(filename):
         return redirect(url_for('login'))
 
     # Retrieve the file analysis (keywords, sentiment, related articles) from the database
-    # You need to implement the 'get_file_analysis' function that retrieves the analysis from the database
     analysis_data = get_file_analysis(session['email'], filename)
+    
+    # Retrieve the file content from the database
+    file_content = analysis_data["file_content"]
+
+    # Extract entities from the file content
+    entities = extract_entities(file_content)
+
+    # Add the entities to the analysis_data dictionary
+    analysis_data["entities"] = entities
 
     return render_template('analysis.html', filename=filename, analysis_data=analysis_data)
 
-@app.route('/search', methods=['POST'])
-def search():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
 
-    search_query = request.form['search_query']
-    search_results = search_files(session['email'], search_query)
-    return render_template('search_results.html', search_query=search_query, search_results=search_results)
+@app.route('/search', methods=['GET', 'POST'])
+def search():
+
+    if request.method == 'POST':
+        search_query = request.form['search_query']
+        email = session['email']
+        search_results = search_files(email, search_query)
+        return render_template('search_results.html', search_results=search_results)
+    return render_template('search.html')
 
 
 # Logout route

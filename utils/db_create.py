@@ -13,7 +13,7 @@ def db_create(email):
     # If the table does not exist, create it
     if not file_table_exists:
         c.execute('''CREATE TABLE files
-                    (filename text, content blob)''')
+                    (filename text, file_content blob)''')
 
     # Check if the keywords table already exists
     c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='keywords'")
@@ -42,7 +42,9 @@ def db_create(email):
                     (id INTEGER PRIMARY KEY,
                      user_email text,
                      file_name text,
-                     upload_time TIMESTAMP)''')
+                     upload_time TIMESTAMP,
+                     file_content text,
+                     sentiment text)''')
         
     # Check if the file_analysis table already exists
     c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='file_analysis'")
@@ -51,7 +53,7 @@ def db_create(email):
     # If the table does not exist, create it
     if not file_analysis_table_exists:
         c.execute('''CREATE TABLE file_analysis
-                    (file_name text, keywords text, sentiment text, urls text)''')
+                    (file_name text, file_content text, keywords text, sentiment text, urls text, topics text)''')
     
     conn.commit()
 

@@ -10,10 +10,12 @@
 {% block content %}
   <div class="container mt-4">
     <h1>News Analyzer</h1>
+    <h2>Welcome back, {{ email }}!</h2>
     <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
       <div class="mb-3">
         <input class="form-control" type="file" id="formFileMultiple" name="files" multiple>
       </div>
+      <br>
       <div class="mb-3">
         <button type="submit" class="btn btn-primary">Upload</button>
       </div>
@@ -46,7 +48,7 @@
                 <a href="{{ url_for('serve_file', filename=filename) }}" class="btn btn-primary me-2">
                   View
                 </a>
-                <br> <!-- Add a line break here -->
+                <br>
                 <a href="{{ url_for('analysis', filename=filename) }}" class="btn btn-secondary">
                   Analysis
                 </a>
@@ -61,4 +63,11 @@
       </tbody>
     </table>
   </div>
+  <br>
+  <form method="POST" action="{{ url_for('search') }}">
+    <div class="input-group mb-3">
+      <input type="text" class="form-control" placeholder="Search for files..." name="search_query">
+      <button class="btn btn-outline-secondary" type="submit">Search</button>
+    </div>
+  </form>  
 {% endblock %}

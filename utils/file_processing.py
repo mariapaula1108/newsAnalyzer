@@ -16,6 +16,5 @@ def extract_keywords(text, num_keywords=5):
     word_freq = Counter(words)
     common_words = word_freq.most_common(num_keywords)
     keyword_list = [word[0] for word in common_words]
-    print(keyword_list)
     return keyword_list
 

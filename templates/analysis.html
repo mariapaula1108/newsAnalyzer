@@ -3,7 +3,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Analysis</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-
 </head>
 {% extends 'base.html' %}
 
@@ -15,6 +14,14 @@
       <li>{{ keyword }}</li>
     {% endfor %}
   </ul>
+  <h3>Topics:</h3>
+  <ul>
+    {% for topic in analysis_data.topics %}
+      <li>
+          {{ topic }}
+      </li>
+    {% endfor %}
+  </ul>
   <h3>Sentiment:</h3>
   <p>{{ analysis_data.sentiment }}</p>
   <h3>Related articles:</h3>
@@ -22,6 +29,36 @@
     {% for url in analysis_data.urls %}
       <li><a href="{{ url }}" target="_blank">{{ url }}</a></li>
     {% endfor %}
+  </ul>
+  <h3>Entities:</h3>
+  <ul>
+    <li>Names:
+      <ul>
+        {% for name in analysis_data.entities.PERSON %}
+          <li>{{ name }}</li>
+        {% endfor %}
+      </ul>
+    </li>
+    <li>Locations:
+      <ul>
+        {% for location in analysis_data.entities.GPE %}
+          <li>{{ location }}</li>
+        {% endfor %}
+      </ul>
+    </li>
+    <li>Institutions:
+      <ul>
+        {% for org in analysis_data.entities.ORG %}
+          <li>{{ org }}</li>
+        {% endfor %}
+      </ul>
+    </li>
+    <li>Addresses:
+      <ul>
+        {% for address in analysis_data.entities.ADDRESS %}
+          <li>{{ address }}</li>
+        {% endfor %}
+      </ul>
   </ul>
   <a href="{{ url_for('upload') }}">Back to file list</a>
 {% endblock %}
